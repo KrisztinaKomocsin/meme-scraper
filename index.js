@@ -1,21 +1,60 @@
-/*import fetch from 'node-fetch';
+import * as fs from 'node:fs';
+import https from 'node:https';
 
-const response = await fetch(
-  'https://memegen-link-examples-upleveled.netlify.app/',
-);
-const body = await response.text();
+const path = './new-Directory';
+const options = {
+  hostname: 'memegen-link-examples-upleveled.netlify.app',
+  port: 443,
+  path: '/',
+  method: 'GET',
+};
 
-console.log(body);
+let html = '';
+const req = https.request(options, (res) => {
+  res
+    .on('data', (d) => {
+      html += d;
+    })
+    .on('end', () => {
+      const body1 = html.replace(/\s/g, '');
+      const url = body1
+        .match(/<img[^>]*src="[^"]*"[^>]*>/gm)
+        .map((x) => x.replace(/.*src="([^"]*)".*/, '$1'));
+      console.log(url);
+      fs.access(path, (error) => {
+        if (error) {
+          fs.mkdir(path, (Error) => {
+            if (Error) {
+              console.log(Error);
+            } else {
+              console.log('New Directory created successfully !!');
+            }
+          });
+        } else {
+          console.log('Given Directory already exists !!');
+        }
+      });
+      for (let i = 1; i < 11; i++) {
+        https.get(url[i], (Res) => {
+          const imagePath = './new-Directory/0' + i + '.jpg';
+          const stream = fs.createWriteStream(imagePath);
+          Res.pipe(stream);
 
-let images = [
-  {
-    url: 'https://api.memegen.link/images/grumpycat/i_hope_that_what_does_not_kill_you/tries_again.jpg?width=300',
-    dest:
-  },
-  {
-    url: 'https://api.memegen.link/images/cb/i_stole/the_pic--i--nic_basket.jpg?width=300',
-    dest:
-  },
-];
+          stream
+            .on('finish', () => {
+              stream.close();
+              console.log('Image downloaded');
+            })
+            .on('error', (err) => {
+              // handle error
+              console.log(err);
+            });
+        });
+      }
+    });
+});
 
-download.images()*/
+req.on('error', (error) => {
+  console.log(error);
+});
+req.end();
